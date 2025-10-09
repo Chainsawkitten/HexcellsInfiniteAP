@@ -484,7 +484,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
     //DEBUG key to brute solve puzzles
     KeyboardShortcut key = new(KeyCode.U);
-    public bool debug = true;
+    public bool debug = false;
 
     //runs every frame. used to check for AP items coming in, check goal completion, use brute solver for debug, and ensure level select screen is accurate using ReloadCellDisplay
     private void Update()
