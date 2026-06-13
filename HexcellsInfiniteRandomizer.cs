@@ -501,8 +501,11 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                     Logger.LogWarning(test);
                     levelUnlockItems.Add(test);
                 }
-                
-                
+
+                if (!initialReloadCellDisplay)
+                {
+                    ReloadCellDisplay();
+                }
             }
 
 
