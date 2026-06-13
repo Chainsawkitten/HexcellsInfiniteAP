@@ -153,11 +153,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 GameObject.Find("Out of Number").GetComponent<TextMesh>().text = "36";
 
                 //ensures that the amount of items we have recieved is also the number shown in center/current gem count
-                if (itemCount != GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().currentSlotNumberOfGems)
-                {
-                    GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().currentSlotNumberOfGems = itemCount;
-                    GameObject.Find("Gems Number").GetComponent<TextMesh>().text = itemCount.ToString();
-                }
+                GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().currentSlotNumberOfGems = itemCount;
+                GameObject.Find("Gems Number").GetComponent<TextMesh>().text = itemCount.ToString();
 
 
                 //Logic for handling display proper state of levels (locked, incomplete, perfect)
