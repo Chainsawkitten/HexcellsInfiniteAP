@@ -14,6 +14,7 @@ using TMPro;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -36,6 +37,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
     public static bool[] levelsCleared = new bool[36];
 
+    public static bool[] levelsCollected = new bool[36];
+
     public static long indexOfLastRecievedItem = 0;
 
     public static string gamepath = "";
@@ -53,6 +56,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     public static int[] levelSeeds = new int[36];
 
     public static bool initialReloadCellDisplay = false;
+
+    public static bool cellDisplayReloadRequested = false;
 
     public GameObject levelCompleteScreen = null;
 
@@ -99,6 +104,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     //Used to ensure UI on Level Select Screen is accurate/correct
     public static void ReloadCellDisplay()
     {
+        cellDisplayReloadRequested = false;
+
         if (sessionConnected)
         {
             var gameManagerScript = GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>();
@@ -191,10 +198,15 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
                                 object obj2 = enumerator2.Current;
                                 Transform transform3 = (Transform)obj2;
-                                if (levelsCleared[transform3.GetComponent<MenuHexLevel>().levelToLoad - 1])
+                                int levelIndex = transform3.GetComponent<MenuHexLevel>().levelToLoad - 1;
+                                if (levelsCleared[levelIndex])
                                 {
                                     transform3.GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
                                 }
+                                else if (levelsCollected[levelIndex])
+                                {
+                                    transform3.GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Completed);
+                                }    
                                 else
                                 {
                                     transform3.GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Notplayed);
@@ -283,9 +295,14 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                             {
                                 if (levelnames[level] == entry)
                                 {
-                                    if (levelsCleared[((Transform)enumlist[level]).GetComponent<MenuHexLevel>().levelToLoad - 1])
+                                    int levelIndex = ((Transform) enumlist[level]).GetComponent<MenuHexLevel>().levelToLoad - 1;
+                                    if (levelsCleared[levelIndex])
                                     {
                                         ((Transform)enumlist[level]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
+                                    }
+                                    else if (levelsCollected[levelIndex])
+                                    {
+                                        ((Transform)enumlist[level]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Completed);
                                     }
                                     else
                                     {
@@ -421,6 +438,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         {
             sessionConnected = true;
 
+            session.Locations.CheckedLocationsUpdated += CheckedLocationsUpdatedHandler;
+            SyncCollectedLocations();
         }
 
     }
@@ -450,15 +469,12 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
                 if (!initialReloadCellDisplay)
                 {
-                    ReloadCellDisplay();
+                    cellDisplayReloadRequested = true;
                 }
             }
 
 
-            if (levelsCleared.All(x => x))
-            {
-                session.SetGoalAchieved(); 
-            }
+            UpdateGoal();
 
             if (key.IsPressed() && debug)
             {
@@ -480,6 +496,12 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
                 }
             }
+
+            if (!initialReloadCellDisplay && cellDisplayReloadRequested)
+            {
+                ReloadCellDisplay();
+            }
+
             //toggled by switchSceneCheck, which is true whenever we switch from any scene back to the level select scene
             if (SceneManager.GetActiveScene().name == "Menu - Hexcells Infinite" && initialReloadCellDisplay == true)
             {
@@ -489,6 +511,38 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             }
 
         }
+    }
+
+    private void UpdateGoal()
+    {
+        for (int i = 0; i < 36; i++)
+        {
+            bool completed = levelsCleared[i] || levelsCollected[i];
+            if (!completed)
+            {
+                return;
+            }
+        }
+
+        session.SetGoalAchieved();
+    }
+
+    private void SyncCollectedLocations()
+    {
+        foreach (long location in session.Locations.AllLocationsChecked)
+        {
+            long level = location - 1;
+            if (int.Parse(options["LevelUnlockType"].ToString()) == 2)
+            {
+                level -= 36;
+            }
+            levelsCollected[level] = true;
+        }
+    }
+
+    public void CheckedLocationsUpdatedHandler(ReadOnlyCollection<long> newCheckedLocations) {
+        SyncCollectedLocations();
+        cellDisplayReloadRequested = true;
     }
 
 
