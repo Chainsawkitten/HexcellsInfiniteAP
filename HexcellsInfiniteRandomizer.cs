@@ -647,6 +647,21 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     }
 
 
+    private static void CheckLevel(int levelToLoad)
+    {
+        if (int.Parse(options["LevelUnlockType"].ToString()) == 1)
+        {
+            session.Locations.CompleteLocationChecks(levelToLoad);
+        }
+        else
+        {
+            session.Locations.CompleteLocationChecks(levelToLoad + 36);
+        }
+        GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().text = "Check Sent!";
+        GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().sortingOrder = 1;
+        levelsCleared[levelToLoad - 1] = true;
+    }
+
 
     //SetupMenu is called whenever a level is completed, perfected or not. This is where locations are sent out, and levelsCleared is updated to reflect if an level has already sent out it's location (i.e. perfected level)
     [HarmonyPatch(typeof(LevelCompleteScriptLevelGen), "SetupMenu")]
@@ -663,17 +678,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             {
                 if (mistakes == 0 || (mistakes == 1 && hasShield))
                 {
-                    if (int.Parse(options["LevelUnlockType"].ToString()) == 1)
-                    {
-                        session.Locations.CompleteLocationChecks(levelEntered.levelToLoad);
-                    }
-                    else
-                    {
-                        session.Locations.CompleteLocationChecks(levelEntered.levelToLoad+36);
-                    }
-                    GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().text = "Check Sent!";
-                    GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().sortingOrder = 1;
-                    levelsCleared[levelEntered.levelToLoad - 1] = true;
+                    CheckLevel(levelEntered.levelToLoad);
                     if (mistakes == 1)
                     {
                         hasShield = false;
@@ -688,19 +693,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             }
             else
             {
-
-                if (int.Parse(options["LevelUnlockType"].ToString()) == 1)
-                    {
-                        session.Locations.CompleteLocationChecks(levelEntered.levelToLoad);
-                    }
-                    else
-                    {
-                        session.Locations.CompleteLocationChecks(levelEntered.levelToLoad+36);
-                    }
-
-                GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().text = "Check Sent!";
-                GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().sortingOrder = 1;
-                levelsCleared[levelEntered.levelToLoad - 1] = true;
+                CheckLevel(levelEntered.levelToLoad);
             }
             if (int.Parse(options["EnableShields"].ToString()) == 1 && mistakes > 0)
             {
