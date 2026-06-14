@@ -258,12 +258,11 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 //Unlocks levels based on AP received items
                 for (int i = 1; i < 7; i++)
                 {
-                    string lvl1 = "Hexcells " + i + "-1";
-                    string lvl2 = "Hexcells " + i + "-2";
-                    string lvl3 = "Hexcells " + i + "-3";
-                    string lvl4 = "Hexcells " + i + "-4";
-                    string lvl5 = "Hexcells " + i + "-5";
-                    string lvl6 = "Hexcells " + i + "-6";
+                    string[] levelnames = new string[6];
+                    for (int j = 1; j < 7; j++)
+                    {
+                        levelnames[j - 1] = "Hexcells " + i + "-" + j;
+                    }
 
                     object[] enumlist = new object[6];
                     int id = 0;
@@ -280,76 +279,21 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                             id = 0;
                         foreach (string entry in levelUnlockItems)
                         {
-                            if (lvl1 == entry)
+                            for (int level = 0; level < 6; level++)
                             {
-                                if (levelsCleared[((Transform)enumlist[0]).GetComponent<MenuHexLevel>().levelToLoad - 1])
+                                if (levelnames[level] == entry)
                                 {
-                                    ((Transform)enumlist[0]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
-                                }
-                                else
-                                {
-                                    ((Transform)enumlist[0]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Notplayed);
-                                }
-
-                            }
-                            else if (lvl2 == entry)
-                            {
-                                if (levelsCleared[((Transform)enumlist[1]).GetComponent<MenuHexLevel>().levelToLoad - 1])
-                                {
-                                    ((Transform)enumlist[1]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
-                                }
-                                else
-                                {
-                                    ((Transform)enumlist[1]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Notplayed);
-                                }
-                            }
-                            else if (lvl3 == entry)
-                            {
-                                if (levelsCleared[((Transform)enumlist[2]).GetComponent<MenuHexLevel>().levelToLoad - 1])
-                                {
-                                    ((Transform)enumlist[2]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
-                                }
-                                else
-                                {
-                                    ((Transform)enumlist[2]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Notplayed);
-                                }
-                            }
-                            else if (lvl4 == entry)
-                            {
-                                if (levelsCleared[((Transform)enumlist[3]).GetComponent<MenuHexLevel>().levelToLoad - 1])
-                                {
-                                    ((Transform)enumlist[3]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
-                                }
-                                else
-                                {
-                                    ((Transform)enumlist[3]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Notplayed);
-                                }
-                            }
-                            else if (lvl5 == entry)
-                            {
-                                if (levelsCleared[((Transform)enumlist[4]).GetComponent<MenuHexLevel>().levelToLoad - 1])
-                                {
-                                    ((Transform)enumlist[4]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
-                                }
-                                else
-                                {
-                                    ((Transform)enumlist[4]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Notplayed);
-                                }
-                            }
-                            else if (lvl6 == entry)
-                            {
-                                if (levelsCleared[((Transform)enumlist[5]).GetComponent<MenuHexLevel>().levelToLoad - 1])
-                                {
-                                    ((Transform)enumlist[5]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
-                                }
-                                else
-                                {
-                                    ((Transform)enumlist[5]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Notplayed);
+                                    if (levelsCleared[((Transform)enumlist[level]).GetComponent<MenuHexLevel>().levelToLoad - 1])
+                                    {
+                                        ((Transform)enumlist[level]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
+                                    }
+                                    else
+                                    {
+                                        ((Transform)enumlist[level]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Notplayed);
+                                    }
                                 }
                             }
                         }
-
-
                     }
                     finally
                     {
