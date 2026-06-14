@@ -472,6 +472,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
             sessionConnected = false;
 
+            Logger.LogError(errorMessage);
+
             return; // Did not connect, show the user the contents of `errorMessage`
         }
         else
