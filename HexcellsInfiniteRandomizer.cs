@@ -1,22 +1,28 @@
-﻿using System;
-using Archipelago.MultiClient.Net;
+﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Enums;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
-using UnityEngine;
 using HarmonyLib;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.IO;
-using System.Runtime.Serialization;
-using System.Linq;
-using TMPro;
-using UnityEngine.SceneManagement;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.IO;
+using System.Linq;
+using System.Reflection.Emit;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Policy;
+using System.Text.RegularExpressions;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.SocialPlatforms;
+using static HexcellsInfiniteRandomizer.HexcellsInfiniteRandomizer.Options;
+using static UnityEngine.EventSystems.EventTrigger;
 
 
 namespace HexcellsInfiniteRandomizer;
@@ -49,7 +55,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
     public static GameObject connectedText = new();
 
-    public static JObject options = [];
+    public static Options options = new();
 
     public static bool hasShield = false;
 
@@ -99,6 +105,69 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
     }
 
+    //Archipelago options
+    public class Options
+    {
+        //This determines if levels need to be cleared with no mistakes to send out an item.
+        public bool RequirePerfectClears = false;
+
+        //This determines how puzzles will be randomized.
+        //Vanilla: No puzzle randomization, all puzzles are as they are in the base game.
+        //Randomized: Every level has a randomly generated puzzle.
+        //TrueRandomized: Every level has a randomly generated puzzle, that is re-randomized if you leave the level.
+        public enum EPuzzleOptions
+        {
+            Vanilla = 1,
+            Randomized = 2,
+            TrueRandomized = 3
+        }
+        public EPuzzleOptions PuzzleOptions = EPuzzleOptions.Vanilla;
+
+        //When enabled, puzzle solves that involve mistakes will give 1 shield (max of 1 shield). Shields are used to block mistakes on future levels. This pairs well with True Randomization.
+        public bool EnableShields = false;
+
+        //This determines how levels will be unlocked.
+        //Vanilla: Levels are unlocked in groups of 6, with 6 groups total.
+        //Individual: Levels are unlocked individually, with individual gem amount requirements.
+        public enum ELevelUnlockType
+        {
+            Vanilla = 1,
+            Individual = 2
+        }
+        public ELevelUnlockType LevelUnlockType = ELevelUnlockType.Vanilla;
+
+        //When enabled, puzzle will be generated with harder sets. Does not affect "Vanilla" under "Puzzle Options".
+        public bool HardGeneration = false;
+
+        public void Load(JObject options)
+        {
+            if (options["RequirePerfectClears"] != null)
+            {
+                RequirePerfectClears = int.Parse(options["RequirePerfectClears"].ToString()) == 1;
+            }
+
+            if (options["PuzzleOptions"] != null)
+            {
+                PuzzleOptions = (EPuzzleOptions)int.Parse(options["PuzzleOptions"].ToString());
+            }
+
+            if (options["EnableShields"] != null)
+            {
+                EnableShields = int.Parse(options["EnableShields"].ToString()) == 1;
+            }
+
+            if (options["LevelUnlockType"] != null)
+            {
+                LevelUnlockType = (ELevelUnlockType)int.Parse(options["LevelUnlockType"].ToString());
+            }
+
+            if (options["HardGeneration"] != null)
+            {
+                HardGeneration = int.Parse(options["HardGeneration"].ToString()) == 1;
+            }
+        }
+    }
+
 
 
     //Used to ensure UI on Level Select Screen is accurate/correct
@@ -144,7 +213,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
             }
 
-            if (int.Parse(options["LevelUnlockType"].ToString()) == 1)
+            if (options.LevelUnlockType == ELevelUnlockType.Vanilla)
             {
 
                 //sets UI unlock amounts to correct amounts
@@ -223,7 +292,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                     }
                 }
             }
-            else if (int.Parse(options["LevelUnlockType"].ToString()) == 2)
+            else if (options.LevelUnlockType == ELevelUnlockType.Individual)
             {
                 //sets UI unlock amounts to correct amounts
                 GameObject.Find("Unlock Amount 1").GetComponent<TextMesh>().text = "";
@@ -401,7 +470,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         {
             //session.MessageLog.OnMessageReceived += OnMessageReceieved;
             result = session.TryConnectAndLogin("Hexcells Infinite", apInfo.GetValueSafe("slot"), ItemsHandlingFlags.AllItems, password: apInfo.GetValueSafe("password"));
-            options = (JObject)session.DataStorage.GetSlotData()["options"];
+            options.Load((JObject)session.DataStorage.GetSlotData()["options"]);
 
             //DEBUG
             foreach (KeyValuePair<string, object> kv in session.DataStorage.GetSlotData())
@@ -455,12 +524,12 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         {
             if (session.Items.Any())
             {
-                if (int.Parse(options["LevelUnlockType"].ToString()) == 1)
+                if (options.LevelUnlockType == ELevelUnlockType.Vanilla)
                 {
                     session.Items.DequeueItem();
                     itemCount++;
                 }
-                else if (int.Parse(options["LevelUnlockType"].ToString()) == 2)
+                else if (options.LevelUnlockType == ELevelUnlockType.Individual)
                 {
                     var test = session.Items.DequeueItem().ItemName.ToString();
                     Logger.LogWarning(test);
@@ -532,7 +601,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         foreach (long location in session.Locations.AllLocationsChecked)
         {
             long level = location - 1;
-            if (int.Parse(options["LevelUnlockType"].ToString()) == 2)
+            if (options.LevelUnlockType == ELevelUnlockType.Individual)
             {
                 level -= 36;
             }
@@ -549,7 +618,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     private void OnSceneChange(Scene scene, LoadSceneMode mode)
     {
         Logger.LogMessage(scene.name);
-        if ((scene.name.StartsWith("1") || scene.name.StartsWith("2") || scene.name.StartsWith("3") || scene.name.StartsWith("4") || scene.name.StartsWith("5") || scene.name.StartsWith("6") || scene.name.StartsWith("Level")) && int.Parse(options["EnableShields"].ToString()) == 1)
+        if ((scene.name.StartsWith("1") || scene.name.StartsWith("2") || scene.name.StartsWith("3") || scene.name.StartsWith("4") || scene.name.StartsWith("5") || scene.name.StartsWith("6") || scene.name.StartsWith("Level")) && options.EnableShields)
         {
             GameObject box;
             if (scene.name.StartsWith("Level"))
@@ -705,7 +774,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
     private static void CheckLevel(int levelToLoad)
     {
-        if (int.Parse(options["LevelUnlockType"].ToString()) == 1)
+        if (options.LevelUnlockType == ELevelUnlockType.Vanilla)
         {
             session.Locations.CompleteLocationChecks(levelToLoad);
         }
@@ -730,7 +799,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
         if (!levelsCleared[levelEntered.levelToLoad - 1])
         {
-            if (int.Parse(options["RequirePerfectClears"].ToString()) == 1)
+            if (options.RequirePerfectClears)
             {
                 if (mistakes == 0 || (mistakes == 1 && hasShield))
                 {
@@ -751,7 +820,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             {
                 CheckLevel(levelEntered.levelToLoad);
             }
-            if (int.Parse(options["EnableShields"].ToString()) == 1 && mistakes > 0)
+            if (options.EnableShields && mistakes > 0)
             {
                 hasShield = true;
                 GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().text += "\n\nYou now have a shield to block 1 mistake.";
@@ -823,11 +892,11 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         if (!levelsCleared[levelEntered.levelToLoad-1])
         {
 
-            if (int.Parse(options["RequirePerfectClears"].ToString()) == 1)
+            if (options.RequirePerfectClears)
             {
                 if (mistakes == 0 || (mistakes == 1 && hasShield))
                 {
-                    if (int.Parse(options["LevelUnlockType"].ToString()) == 1)
+                    if (options.LevelUnlockType == ELevelUnlockType.Vanilla)
                     {
                         session.Locations.CompleteLocationChecks(levelEntered.levelToLoad);
                     }
@@ -853,7 +922,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             }
             else
             {
-                if (int.Parse(options["LevelUnlockType"].ToString()) == 1)
+                if (options.LevelUnlockType == ELevelUnlockType.Vanilla)
                     {
                         session.Locations.CompleteLocationChecks(levelEntered.levelToLoad);
                     }
@@ -866,7 +935,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 levelsCleared[levelEntered.levelToLoad - 1] = true;
                 
             }
-            if (int.Parse(options["EnableShields"].ToString()) == 1 && mistakes > 0)
+            if (options.EnableShields && mistakes > 0)
             {
                 hasShield = true;
                 textUI.GetComponent<TextMeshPro>().text += "\n\nYou now have a shield to block 1 mistake.";
@@ -914,7 +983,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     public static bool Prefix_LoadRandomLevel_MenuHexLevel(MenuHexLevel __instance)
     {
         //VANILLA
-        if (int.Parse(options["PuzzleOptions"].ToString()) == 1)
+        if (options.PuzzleOptions == EPuzzleOptions.Vanilla)
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -924,12 +993,12 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             }
         }
             //RANDOMIZED
-            else if (int.Parse(options["PuzzleOptions"].ToString()) == 2)
+            else if (options.PuzzleOptions == EPuzzleOptions.Randomized)
             {
                 if (Input.GetMouseButtonDown(0))
                 {
                     levelEntered = __instance;
-                    GameObject.Find("Game Manager(Clone)").GetComponent<OptionsManager>().currentOptions.levelGenHardModeActive = Convert.ToBoolean(int.Parse(options["HardGeneration"].ToString()));
+                    GameObject.Find("Game Manager(Clone)").GetComponent<OptionsManager>().currentOptions.levelGenHardModeActive = options.HardGeneration;
                     __instance.musicDirector.ChangeTrack(__instance.levelTrack);
                     while (levelSeeds[levelEntered.levelToLoad - 1] == 0)
                     {
@@ -944,12 +1013,12 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 }
             }
             //TRUE RANDOMIZED
-            else if (int.Parse(options["PuzzleOptions"].ToString()) == 3)
+            else if (options.PuzzleOptions == EPuzzleOptions.TrueRandomized)
             {
                 if (Input.GetMouseButtonDown(0))
                 {
                     levelEntered = __instance;
-                    GameObject.Find("Game Manager(Clone)").GetComponent<OptionsManager>().currentOptions.levelGenHardModeActive = Convert.ToBoolean(int.Parse(options["HardGeneration"].ToString()));
+                    GameObject.Find("Game Manager(Clone)").GetComponent<OptionsManager>().currentOptions.levelGenHardModeActive = options.HardGeneration;
                     __instance.musicDirector.ChangeTrack(__instance.levelTrack);
 
                     GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().seedNumber = random.Next(-99999999, 99999999).ToString();
@@ -966,7 +1035,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     [HarmonyPrefix]
     public static bool Prefix_CustomSaveLevelProgress_SaveCurrentLevelState(GameManagerScript __instance)
     {
-        if (int.Parse(options["PuzzleOptions"].ToString()) == 2)
+        if (options.PuzzleOptions == EPuzzleOptions.Randomized)
         {
 
             HexScoring component = GameObject.Find("Score Text").GetComponent<HexScoring>();
@@ -1094,7 +1163,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     [HarmonyPrefix]
     public static bool Prefix_CustomLoadLevelProgress_LoadLevelState(GameManagerScript __instance)
     {
-        if (int.Parse(options["PuzzleOptions"].ToString()) == 2)
+        if (options.PuzzleOptions == EPuzzleOptions.Randomized)
         {
             try
             {
@@ -1214,24 +1283,21 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     [HarmonyPrefix]
     public static bool Prefix_CustomCheckLevelProgress_CheckForLevelSaveState(ref bool __result, GameManagerScript __instance)
     {
-        if (options["PuzzleOptions"] != null)
+        if (options.PuzzleOptions == EPuzzleOptions.Randomized)
         {
-            if (int.Parse(options["PuzzleOptions"].ToString()) == 2)
+            string text = string.Empty;
+            if (__instance.currentMenuState == GameManagerScript.MenuState.LevelSelect)
             {
-                string text = string.Empty;
-                if (__instance.currentMenuState == GameManagerScript.MenuState.LevelSelect)
-                {
-                    text = string.Concat(
-                    [
-                SceneManager.GetActiveScene().name,
-            "-",
-            levelEntered.levelToLoad-1,
-            ".save"
-                    ]);
-                }
-                __result = File.Exists(__instance.executablePath + "/saves/" + text);
-                return false;
+                text = string.Concat(
+                [
+            SceneManager.GetActiveScene().name,
+        "-",
+        levelEntered.levelToLoad-1,
+        ".save"
+                ]);
             }
+            __result = File.Exists(__instance.executablePath + "/saves/" + text);
+            return false;
         }
         return true;
     }
@@ -1241,7 +1307,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     [HarmonyPrefix]
     public static bool Prefix_CustomDeleteLevelProgress_DeleteLevelSaveState(GameManagerScript __instance)
     {
-        if (int.Parse(options["PuzzleOptions"].ToString()) == 2)
+        if (options.PuzzleOptions == EPuzzleOptions.Randomized)
         {
             string text = string.Empty;
             if (__instance.currentMenuState == GameManagerScript.MenuState.LevelSelect)
