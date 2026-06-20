@@ -139,6 +139,9 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         //When enabled, puzzle will be generated with harder sets. Does not affect "Vanilla" under "Puzzle Options".
         public bool HardGeneration = false;
 
+        //When enabled, all levels have to be cleared to complete the goal, even ones that have already been collected (eg. by a game completing its goal or manually with /collect).
+        public bool RequireClearingCollectedLevels = false;
+
         public void Load(JObject options)
         {
             if (options["RequirePerfectClears"] != null)
@@ -164,6 +167,11 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             if (options["HardGeneration"] != null)
             {
                 HardGeneration = int.Parse(options["HardGeneration"].ToString()) == 1;
+            }
+
+            if (options["RequireClearingCollectedLevels"] != null)
+            {
+                RequireClearingCollectedLevels = int.Parse(options["RequireClearingCollectedLevels"].ToString()) == 1;
             }
         }
     }
@@ -272,7 +280,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                                 {
                                     transform3.GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
                                 }
-                                else if (levelsCollected[levelIndex])
+                                else if (levelsCollected[levelIndex] && !options.RequireClearingCollectedLevels)
                                 {
                                     transform3.GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Completed);
                                 }    
@@ -369,7 +377,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                                     {
                                         ((Transform)enumlist[level]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Perfect);
                                     }
-                                    else if (levelsCollected[levelIndex])
+                                    else if (levelsCollected[levelIndex] && !options.RequireClearingCollectedLevels)
                                     {
                                         ((Transform)enumlist[level]).GetComponent<MenuHexLevel>().SetState(MenuHexLevel.State.Completed);
                                     }
@@ -586,7 +594,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     {
         for (int i = 0; i < 36; i++)
         {
-            bool completed = levelsCleared[i] || levelsCollected[i];
+            bool completed = levelsCleared[i] || (levelsCollected[i] && !options.RequireClearingCollectedLevels);
             if (!completed)
             {
                 return;
