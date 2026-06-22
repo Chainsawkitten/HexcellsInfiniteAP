@@ -785,6 +785,12 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
                     manager.currentPerGameData.totalGemsInGame = 36;
 
+                    //Set all world unlock animations as already having played. This is to prevent the state being overridden after being collected.
+                    for (int i = 0; i < 5; i++)
+                    {
+                        manager.currentSlotAnimationsPlayed[i] = 1;
+                    }
+
                     for (int i = 0; i < GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().currentSlotLevelGemsUnlocked.Length; i++)
                     {
                         if (levelsCleared[i])
