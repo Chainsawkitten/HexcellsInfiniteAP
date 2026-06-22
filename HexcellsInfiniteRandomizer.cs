@@ -1,5 +1,6 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Enums;
+using Archipelago.MultiClient.Net.Models;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -11,18 +12,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Reflection.Emit;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Security.Policy;
-using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.SocialPlatforms;
 using static HexcellsInfiniteRandomizer.HexcellsInfiniteRandomizer.Options;
-using static UnityEngine.EventSystems.EventTrigger;
 
 
 namespace HexcellsInfiniteRandomizer;
@@ -44,6 +39,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     public static bool[] levelsCleared = new bool[36];
 
     public static bool[] levelsCollected = new bool[36];
+
+    public static string[] levelClearMessages = new string[36];
 
     public static long indexOfLastRecievedItem = 0;
 
@@ -198,7 +195,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 onetimeUIChanges = false;
             }
             
-            connectedText.GetComponent<TextMeshPro>().color = new Color(0, 1, 0);
+            connectedText.GetComponent<TextMeshPro>().color = new UnityEngine.Color(0, 1, 0);
 
 
             try
@@ -410,7 +407,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                     onetimeUIChanges = false;
                 }
                 
-                connectedText.GetComponent<TextMeshPro>().color = new Color(1, 0, 0);
+                connectedText.GetComponent<TextMeshPro>().color = new UnityEngine.Color(1, 0, 0);
             }
         }
     }
@@ -517,6 +514,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
             session.Locations.CheckedLocationsUpdated += CheckedLocationsUpdatedHandler;
             SyncCollectedLocations();
+            ScoutLocations();
         }
 
     }
@@ -622,6 +620,61 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         cellDisplayReloadRequested = true;
     }
 
+    private void ScoutLocations()
+    {
+        long[] ids = new long[36];
+        for (int i = 0; i < 36; ++i)
+        {
+            levelClearMessages[i] = "Check Sent!";
+
+            ids[i] = i + 1;
+            if (options.LevelUnlockType == ELevelUnlockType.Individual)
+            {
+                ids[i] += 36;
+            }
+        }
+
+        try
+        {
+            session.Locations.ScoutLocationsAsync(ScoutLocationCallback, ids);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    static private void ScoutLocationCallback(Dictionary<long, ScoutedItemInfo> itemInfos)
+    {
+        foreach (KeyValuePair<long, ScoutedItemInfo> itemInfo in itemInfos)
+        {
+            long id = itemInfo.Key - 1;
+            if (options.LevelUnlockType == ELevelUnlockType.Individual)
+            {
+                id -= 36;
+            }
+
+            string color = "47bcbc";
+            if ((itemInfo.Value.Flags & ItemFlags.Advancement) == ItemFlags.Advancement)
+            {
+                color = "a08cda";
+            }
+            else if ((itemInfo.Value.Flags & ItemFlags.NeverExclude) == ItemFlags.NeverExclude)
+            {
+                color = "3b5bbe";
+            }
+            else if ((itemInfo.Value.Flags & ItemFlags.Trap) == ItemFlags.Trap)
+            {
+                color = "b94437";
+            }
+
+            levelClearMessages[id] = "Found <color=#b6b615>" + Sanitize(itemInfo.Value.Player.Name) + "</color>'s <color=#" + color + ">" + Sanitize(itemInfo.Value.ItemName) + "</color>!";
+        }
+    }
+
+    static private string Sanitize(string text)
+    {
+        return text.Replace("<", "<noparse><</noparse>");
+    }
 
     private void OnSceneChange(Scene scene, LoadSceneMode mode)
     {
@@ -690,7 +743,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 stream.Close();
                 if (session.DataStorage.GetSlotData()["Seed"].ToString() != saveData.serverSeed && saveData.serverSeed != "")
                 {
-                    GameObject.Find("User Levels Button").GetComponent<TextMeshPro>().color = new Color(1, .5f, .5f);
+                    GameObject.Find("User Levels Button").GetComponent<TextMeshPro>().color = new UnityEngine.Color(1, .5f, .5f);
                     GameObject.Find("User Levels Button").GetComponent<TextMeshPro>().text = "Current save is from a different AP.\nThis will break things!\nRemove the slotAP.save file from the saves directory!";
                 }
                 else
@@ -780,7 +833,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     }
 
 
-    private static void CheckLevel(int levelToLoad)
+    private static void CheckLevel(int levelToLoad, GameObject textUI = null)
     {
         if (options.LevelUnlockType == ELevelUnlockType.Vanilla)
         {
@@ -790,8 +843,14 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         {
             session.Locations.CompleteLocationChecks(levelToLoad + 36);
         }
-        GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().text = "Check Sent!";
-        GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().sortingOrder = 1;
+
+        if (textUI != null)
+        {
+            textUI.GetComponent<TextMeshPro>().text = levelClearMessages[levelToLoad - 1];
+            textUI.GetComponent<TextMeshPro>().parseCtrlCharacters = false;
+            textUI.GetComponent<TextMeshPro>().sortingOrder = 1;
+        }
+
         levelsCleared[levelToLoad - 1] = true;
     }
 
@@ -811,7 +870,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             {
                 if (mistakes == 0 || (mistakes == 1 && hasShield))
                 {
-                    CheckLevel(levelEntered.levelToLoad);
+                    CheckLevel(levelEntered.levelToLoad, GameObject.Find("Puzzle Completed Label"));
                     if (mistakes == 1)
                     {
                         hasShield = false;
@@ -826,7 +885,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             }
             else
             {
-                CheckLevel(levelEntered.levelToLoad);
+                CheckLevel(levelEntered.levelToLoad, GameObject.Find("Puzzle Completed Label"));
             }
             if (options.EnableShields && mistakes > 0)
             {
@@ -887,7 +946,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         DestroyImmediate(textUI.GetComponent<LoadLocalizedText>());
         
         textUI.GetComponent<TextMeshPro>().text = "";
-        textUI.GetComponent<TextMeshPro>().color = new Color(0.7059f, 0.7059f, 0.7059f, 1f);
+        textUI.GetComponent<TextMeshPro>().color = new UnityEngine.Color(0.7059f, 0.7059f, 0.7059f, 1f);
         textUI.GetComponent<TextMeshPro>().fontSize = .5f;
         textUI.GetComponent<TextMeshPro>().fontSizeMin = 0;
         textUI.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 0);
@@ -904,17 +963,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             {
                 if (mistakes == 0 || (mistakes == 1 && hasShield))
                 {
-                    if (options.LevelUnlockType == ELevelUnlockType.Vanilla)
-                    {
-                        session.Locations.CompleteLocationChecks(levelEntered.levelToLoad);
-                    }
-                    else
-                    {
-                        session.Locations.CompleteLocationChecks(levelEntered.levelToLoad+36);
-                    }
-                    textUI.GetComponent<TextMeshPro>().text = "Check Sent!";
-                    textUI.GetComponent<TextMeshPro>().sortingOrder = 1;
-                    levelsCleared[levelEntered.levelToLoad - 1] = true;
+                    CheckLevel(levelEntered.levelToLoad, textUI);
                     
                     if (mistakes == 1)
                     {
@@ -930,18 +979,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             }
             else
             {
-                if (options.LevelUnlockType == ELevelUnlockType.Vanilla)
-                    {
-                        session.Locations.CompleteLocationChecks(levelEntered.levelToLoad);
-                    }
-                    else
-                    {
-                        session.Locations.CompleteLocationChecks(levelEntered.levelToLoad+36);
-                    }
-                textUI.GetComponent<TextMeshPro>().text = "Check Sent!";
-                textUI.GetComponent<TextMeshPro>().sortingOrder = 1;
-                levelsCleared[levelEntered.levelToLoad - 1] = true;
-                
+                CheckLevel(levelEntered.levelToLoad, textUI);
             }
             if (options.EnableShields && mistakes > 0)
             {
