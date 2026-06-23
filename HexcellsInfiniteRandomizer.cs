@@ -854,7 +854,6 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         {
             textUI.GetComponent<TextMeshPro>().text = levelClearMessages[levelToLoad - 1];
             textUI.GetComponent<TextMeshPro>().parseCtrlCharacters = false;
-            textUI.GetComponent<TextMeshPro>().sortingOrder = 1;
         }
 
         levelsCleared[levelToLoad - 1] = true;
@@ -886,7 +885,6 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 else
                 {
                     GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().text = "Beat the level with no mistakes to send out a check!";
-                    GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().sortingOrder = 1;
                 }
             }
             else
@@ -902,7 +900,6 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         else
         {
             GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().text = "This location has already been checked!";
-            GameObject.Find("Puzzle Completed Label").GetComponent<TextMeshPro>().sortingOrder = 1;
         }
         GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().SaveGame();
     }
@@ -980,7 +977,6 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 else
                 {
                     textUI.GetComponent<TextMeshPro>().text = "Beat the level with no mistakes to send out a check!";
-                    textUI.GetComponent<TextMeshPro>().sortingOrder = 1;
                 }
             }
             else
@@ -996,7 +992,6 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         else
         {
             textUI.GetComponent<TextMeshPro>().text = "This location has already been checked!";
-            textUI.GetComponent<TextMeshPro>().sortingOrder = 1;
         }
         GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().SaveGame();
 
