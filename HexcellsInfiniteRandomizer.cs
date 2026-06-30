@@ -1510,6 +1510,19 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 mistakesMade = 0;
                 Logger.LogMessage("Mistake made. Sending death link.");
                 deathLinkService.SendDeathLink(new DeathLink(apInfo.GetValueSafe("slot"), apInfo.GetValueSafe("slot") + " made an incorrect deduction."));
+
+                //Display death link message
+                LoadingText loadingLabel = GameObject.Find("Loading Text")?.GetComponent<LoadingText>();
+                if (loadingLabel != null)
+                {
+                    loadingLabel.alpha = 1f;
+                    loadingLabel.alphaTarget = 0f;
+
+                    loadingLabel.textMeshPro.text = "Death link sent";
+
+                    GameObject.Find("Fader").GetComponent<FaderScript>().alphaLerp = 1f;
+                    GameObject.Find("Fader").GetComponent<FaderScript>().alphaLerpTarget = 0f;
+                }
             }
         }
     }
