@@ -71,6 +71,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
     public static DeathLinkService deathLinkService = null;
 
+    public static int mistakesMade = 0;
+
 
 
     //Custom version of SaveData, used to include levelsCleared
@@ -145,6 +147,9 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         //When enabled and you make a mistake, everyone who enabled death link dies. When anyone dies, your current level is restarted.
         public bool EnableDeathLink = false;
 
+        //How many mistakes it takes to send a death link.
+        public int DeathLinkAmnesty = 1;
+
         public void Load(JObject options)
         {
             if (options["RequirePerfectClears"] != null)
@@ -180,6 +185,11 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             if (options["EnableDeathLink"] != null)
             {
                 EnableDeathLink = int.Parse(options["EnableDeathLink"].ToString()) == 1;
+            }
+
+            if (options["DeathLinkAmnesty"] != null)
+            {
+                DeathLinkAmnesty = int.Parse(options["DeathLinkAmnesty"].ToString());
             }
         }
     }
@@ -1462,8 +1472,13 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     {
         if (sessionConnected && options.EnableDeathLink)
         {
-            Logger.LogMessage("Mistake made. Sending death link.");
-            deathLinkService.SendDeathLink(new DeathLink(apInfo.GetValueSafe("slot"), apInfo.GetValueSafe("slot") + " made an incorrect deduction."));
+            mistakesMade += 1;
+            if (mistakesMade >= options.DeathLinkAmnesty)
+            {
+                mistakesMade = 0;
+                Logger.LogMessage("Mistake made. Sending death link.");
+                deathLinkService.SendDeathLink(new DeathLink(apInfo.GetValueSafe("slot"), apInfo.GetValueSafe("slot") + " made an incorrect deduction."));
+            }
         }
     }
 }
