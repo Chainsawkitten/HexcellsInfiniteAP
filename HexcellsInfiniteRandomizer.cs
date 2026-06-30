@@ -719,7 +719,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             }
 
             //Display death link message
-            LoadingText loadingLabel = GameObject.Find("Loading Text").GetComponent<LoadingText>();
+            LoadingText loadingLabel = GameObject.Find("Loading Text")?.GetComponent<LoadingText>();
             if (loadingLabel != null)
             {
                 loadingLabel.alpha = 0f;
