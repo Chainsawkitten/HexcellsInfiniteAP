@@ -711,7 +711,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             Logger.LogMessage("Death link received : " + (deathLink.Cause != null ? deathLink.Cause : ""));
 
             //Don't restart the level if it's been cleared (to avoid reset when displaying results screen).
-            if (levelsCleared[levelEntered.levelToLoad - 1])
+            if (levelEntered.levelToLoad == 0 || levelsCleared[levelEntered.levelToLoad - 1])
             {
                 return;
             }
