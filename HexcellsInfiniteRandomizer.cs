@@ -1,4 +1,5 @@
 ﻿using Archipelago.MultiClient.Net;
+using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Models;
 using BepInEx;
@@ -67,6 +68,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     public static List<string> levelUnlockItems = [];
 
     public static bool onetimeUIChanges = true;
+
+    public static DeathLinkService deathLinkService = null;
 
 
 
@@ -139,6 +142,9 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         //When enabled, all levels have to be cleared to complete the goal, even ones that have already been collected (eg. by a game completing its goal or manually with /collect).
         public bool RequireClearingCollectedLevels = false;
 
+        //When enabled and you make a mistake, everyone who enabled death link dies. When anyone dies, your current level is restarted.
+        public bool EnableDeathLink = false;
+
         public void Load(JObject options)
         {
             if (options["RequirePerfectClears"] != null)
@@ -169,6 +175,11 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             if (options["RequireClearingCollectedLevels"] != null)
             {
                 RequireClearingCollectedLevels = int.Parse(options["RequireClearingCollectedLevels"].ToString()) == 1;
+            }
+
+            if (options["EnableDeathLink"] != null)
+            {
+                EnableDeathLink = int.Parse(options["EnableDeathLink"].ToString()) == 1;
             }
         }
     }
@@ -515,6 +526,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             session.Locations.CheckedLocationsUpdated += CheckedLocationsUpdatedHandler;
             SyncCollectedLocations();
             ScoutLocations();
+            SetupDeathLink();
         }
 
     }
@@ -671,6 +683,37 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         }
     }
 
+    private void SetupDeathLink()
+    {
+        if (options.EnableDeathLink)
+        {
+            Logger.LogMessage("Enabling death link");
+            deathLinkService = DeathLinkProvider.CreateDeathLinkService(session);
+            deathLinkService.EnableDeathLink();
+            deathLinkService.OnDeathLinkReceived += DeathLinkReceivedCallback;
+        }
+    }
+
+    static private void DeathLinkReceivedCallback(DeathLink deathLink)
+    {
+        if (deathLink.Source != apInfo.GetValueSafe("slot"))
+        {
+            Logger.LogMessage("Death link received : " + (deathLink.Cause != null ? deathLink.Cause : ""));
+
+            //Restart the current level.
+            if (GameObject.Find("Game Manager(Clone)") != null)
+            {
+                GameManagerScript component = GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>();
+                if (component.CheckForLevelSaveState())
+                {
+                    component.DeleteLevelSaveState();
+                }
+            }
+
+            GameObject.Find("Fader").GetComponent<FaderScript>().FadeOut(Application.loadedLevelName);
+        }
+    }
+    
     static private string Sanitize(string text)
     {
         return text.Replace("<", "<noparse><</noparse>");
@@ -1411,5 +1454,16 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 			GameObject.Find("Fader").GetComponent<FaderScript>().FadeOut(0);
 		}
         return false;
+    }
+
+    [HarmonyPatch(typeof(HexScoring), "Mistake")]
+    [HarmonyPostfix]
+    public static void Postfix_HexScoring_Mistake(HexScoring __instance)
+    {
+        if (sessionConnected && options.EnableDeathLink)
+        {
+            Logger.LogMessage("Mistake made. Sending death link.");
+            deathLinkService.SendDeathLink(new DeathLink(apInfo.GetValueSafe("slot"), apInfo.GetValueSafe("slot") + " made an incorrect deduction."));
+        }
     }
 }
