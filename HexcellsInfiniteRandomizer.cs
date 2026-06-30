@@ -73,6 +73,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
     public static int mistakesMade = 0;
 
+    public static bool pendingDeathLink = false;
+
 
 
     //Custom version of SaveData, used to include levelsCleared
@@ -700,13 +702,13 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             Logger.LogMessage("Enabling death link");
             deathLinkService = DeathLinkProvider.CreateDeathLinkService(session);
             deathLinkService.EnableDeathLink();
-            deathLinkService.OnDeathLinkReceived += DeathLinkReceivedCallback;
+            deathLinkService.OnDeathLinkReceived += this.DeathLinkReceivedCallback;
         }
     }
 
-    static private void DeathLinkReceivedCallback(DeathLink deathLink)
+    private void DeathLinkReceivedCallback(DeathLink deathLink)
     {
-        if (deathLink.Source != apInfo.GetValueSafe("slot"))
+        if (deathLink.Source != apInfo.GetValueSafe("slot") && !pendingDeathLink)
         {
             Logger.LogMessage("Death link received : " + (deathLink.Cause != null ? deathLink.Cause : ""));
 
@@ -714,6 +716,16 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             if (levelEntered.levelToLoad == 0 || levelsCleared[levelEntered.levelToLoad - 1])
             {
                 return;
+            }
+
+            //Display death link message
+            LoadingText loadingLabel = GameObject.Find("Loading Text").GetComponent<LoadingText>();
+            if (loadingLabel != null)
+            {
+                loadingLabel.alpha = 0f;
+                loadingLabel.alphaTarget = 1f;
+
+                loadingLabel.textMeshPro.text = (deathLink.Cause != null) ? deathLink.Cause : "Death link received";
             }
 
             //Restart the current level.
@@ -731,10 +743,19 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 }
             }
 
-            GameObject.Find("Fader").GetComponent<FaderScript>().FadeOut(Application.loadedLevelName);
+            GameObject.Find("Fader").GetComponent<FaderScript>().alphaLerpTarget = 1f;
+            StartCoroutine("ChangeScene", Application.loadedLevelName);
         }
     }
-    
+
+    public IEnumerator ChangeScene(string scene)
+    {
+        pendingDeathLink = true;
+        yield return new WaitForSeconds(2f);
+        pendingDeathLink = false;
+        Application.LoadLevel(scene);
+    }
+
     static private string Sanitize(string text)
     {
         return text.Replace("<", "<noparse><</noparse>");
