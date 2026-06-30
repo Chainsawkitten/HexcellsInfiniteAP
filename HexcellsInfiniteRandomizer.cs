@@ -718,6 +718,11 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 {
                     component.DeleteLevelSaveState();
                 }
+
+                if (options.PuzzleOptions == EPuzzleOptions.TrueRandomized)
+                {
+                    component.seedNumber = random.Next(-99999999, 99999999).ToString();
+                }
             }
 
             GameObject.Find("Fader").GetComponent<FaderScript>().FadeOut(Application.loadedLevelName);
