@@ -2,4 +2,4 @@
 Archipelago Randomizer for Hexcells Infinite
 
 ### How do I install this?
-Refer to the installation instructions on the Archipelago site.
+See the [setup instructions](https://github.com/Chainsawkitten/HexcellsInfiniteAPWorld/blob/HexcellsInfinite/worlds/hexcells_infinite/docs/setup_en.md).
