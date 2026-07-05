@@ -75,6 +75,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
     public static bool pendingDeathLink = false;
 
+    public static Version randomizerVersion = new Version(MyPluginInfo.PLUGIN_VERSION);
+
 
 
     //Custom version of SaveData, used to include levelsCleared
@@ -496,9 +498,28 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
         try
         {
-            //session.MessageLog.OnMessageReceived += OnMessageReceieved;
             result = session.TryConnectAndLogin("Hexcells Infinite", apInfo.GetValueSafe("slot"), ItemsHandlingFlags.AllItems, password: apInfo.GetValueSafe("password"));
-            options.Load((JObject)session.DataStorage.GetSlotData()["options"]);
+            Dictionary<string, object> slotData = session.DataStorage.GetSlotData();
+
+            options.Load((JObject)slotData["options"]);
+
+            //Check if we are compatible with the world version.
+            //If the slot data doesn't contain a world version, we assume 1.2.0 (last APWorld version that did not contain a version number).
+            Version worldVersion = new Version(1, 2, 0);
+            if (slotData.ContainsKey("WorldVersion"))
+            {
+                JArray versionArray = (JArray)slotData["WorldVersion"];
+                worldVersion = new Version((int)versionArray[0], (int)versionArray[1], (int)versionArray[2]);
+            }
+
+            if (worldVersion.Major < randomizerVersion.Major)
+            {
+                throw new Exception("AP world version " + worldVersion + " is incompatible with randomizer version " + randomizerVersion + ". Please update the AP world and regenerate (or downgrade the randomizer).");
+            }
+            else if (worldVersion.Major > randomizerVersion.Major || worldVersion.Minor > randomizerVersion.Minor)
+            {
+                throw new Exception("AP world version " + worldVersion + " is newer than randomizer version " + randomizerVersion + ". Please update the randomizer.");
+            }
 
             //DEBUG
             foreach (KeyValuePair<string, object> kv in session.DataStorage.GetSlotData())
