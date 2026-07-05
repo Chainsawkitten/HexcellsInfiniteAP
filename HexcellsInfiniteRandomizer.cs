@@ -740,6 +740,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             }
 
             //Display death link message
+            // TODO Fix message display when using vanilla levels.
             LoadingText loadingLabel = GameObject.Find("Loading Text")?.GetComponent<LoadingText>();
             if (loadingLabel != null)
             {
@@ -1534,6 +1535,9 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
                 //Display death link message
                 LoadingText loadingLabel = GameObject.Find("Loading Text")?.GetComponent<LoadingText>();
+
+                // TODO Fix message display when using vanilla levels.
+
                 if (loadingLabel != null)
                 {
                     loadingLabel.alpha = 1f;
