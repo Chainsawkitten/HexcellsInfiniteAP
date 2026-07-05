@@ -1,4 +1,6 @@
 /bin/
 /obj/
 notes.txt
-HexcellsInfiniteAP.sln
+*.sln
+.vs/
+Hexcells Infinite_Data/

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net35</TargetFramework>
@@ -36,18 +36,15 @@
 
     <!-- Publicize directly when referencing -->
     <Reference Include="Assembly-CSharp.dll" Publicize="true"> 
-      <HintPath>..\..\Hexcells Infinite_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>Hexcells Infinite_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="TextMeshPro-5.6-Runtime.dll" Publicize="true"> 
-      <HintPath>..\..\Hexcells Infinite_Data\Managed\TextMeshPro-5.6-Runtime.dll</HintPath>
+      <HintPath>Hexcells Infinite_Data\Managed\TextMeshPro-5.6-Runtime.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI.dll" Publicize="true"> 
-      <HintPath>..\..\Hexcells Infinite_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>Hexcells Infinite_Data\Managed\UnityEngine.UI.dll</HintPath>
     </Reference>
     
 </ItemGroup>
 
-<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="cd &quot;F:\DND\steamapps\common\Hexcells Infinite\HexcellsInfiniteRandomizer\HexcellsInfiniteAP\bin\Debug\net35&quot;&#xA;copy HexcellsInfiniteRandomizer.dll &quot;F:\DND\steamapps\common\Hexcells Infinite\BepInEx\plugins&quot;&#xA;F:\DND\steamapps\common\&quot;Hexcells Infinite&quot;\&quot;Hexcells Infinite.exe&quot;" />
-</Target>
 </Project>
