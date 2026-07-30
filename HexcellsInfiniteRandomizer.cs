@@ -557,6 +557,8 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         {
             sessionConnected = true;
 
+            Logger.LogMessage("Connected to Archipelago server as " + apInfo.GetValueSafe("slot"));
+
             session.Locations.CheckedLocationsUpdated += CheckedLocationsUpdatedHandler;
             SyncCollectedLocations();
             ScoutLocations();
