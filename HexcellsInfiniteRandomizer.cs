@@ -421,19 +421,20 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                     }
                 }
             }
-            else
+        }
+        else
+        {
+            connectedText = GameObject.Find("User Levels Button");
+            DestroyImmediate(connectedText.GetComponent<LoadLocalizedText>());
+            connectedText.GetComponent<TextMeshPro>().text = "Failed to Connect to AP. Check APInfo file.";
+            connectedText.GetComponent<BoxCollider>().enabled = false;
+            if (onetimeUIChanges)
             {
-                connectedText = GameObject.Find("User Levels Button");
-                DestroyImmediate(connectedText.GetComponent<LoadLocalizedText>());
-                connectedText.GetComponent<TextMeshPro>().text = "Failed to Connect to AP. Check APInfo file.";
-                connectedText.GetComponent<BoxCollider>().enabled = false;
-                if (onetimeUIChanges) {
-                    connectedText.transform.Translate(0, 5, 0);
-                    onetimeUIChanges = false;
-                }
-                
-                connectedText.GetComponent<TextMeshPro>().color = new UnityEngine.Color(1, 0, 0);
+                connectedText.transform.Translate(0, 5, 0);
+                onetimeUIChanges = false;
             }
+
+            connectedText.GetComponent<TextMeshPro>().color = new UnityEngine.Color(1, 0, 0);
         }
     }
 
@@ -621,15 +622,14 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             {
                 ReloadCellDisplay();
             }
+        }
 
-            //toggled by switchSceneCheck, which is true whenever we switch from any scene back to the level select scene
-            if (SceneManager.GetActiveScene().name == "Menu - Hexcells Infinite" && initialReloadCellDisplay == true)
-            {
-                initialReloadCellDisplay = false;
-                onetimeUIChanges = true;
-                ReloadCellDisplay();
-            }
-
+        //toggled by switchSceneCheck, which is true whenever we switch from any scene back to the level select scene
+        if (SceneManager.GetActiveScene().name == "Menu - Hexcells Infinite" && initialReloadCellDisplay == true)
+        {
+            initialReloadCellDisplay = false;
+            onetimeUIChanges = true;
+            ReloadCellDisplay();
         }
     }
 
