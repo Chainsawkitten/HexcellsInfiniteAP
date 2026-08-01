@@ -834,7 +834,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     private static string GetSlotFileName(GameManagerScript manager)
     {
         string seed = session.DataStorage.GetSlotData()["Seed"].ToString();
-        return manager.executablePath + "/saves/slotAP_" + seed + ".save";
+        return manager.executablePath + "/saves/slotAP_" + seed + "_" + session.ConnectionInfo.Slot.ToString() + ".save";
     }
 
     //custom implementation of LoadGame, which also handles setting unlock amounts, as well as showing correct level states when returning to game
@@ -923,27 +923,31 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     [HarmonyPrefix]
     public static bool Prefix_SaveAdditionalValues_SaveGame(GameManagerScript __instance)
     {
-        Logger.LogMessage("SAVED GAME");
-        try
+        if (sessionConnected)
         {
-            SaveAddData saveData = new()
+            Logger.LogMessage("SAVED GAME");
+            try
             {
-                levelsCleared = levelsCleared,
-                animationsPlayed = __instance.currentSlotAnimationsPlayed,
-                hasShield = hasShield,
-                levelSeeds = levelSeeds
-            };
-            Stream stream = File.Open(GetSlotFileName(__instance), FileMode.Create);
-            BinaryFormatter binaryFormatter = new();
-            binaryFormatter.Serialize(stream, saveData);
-            stream.Close();
+                SaveAddData saveData = new()
+                {
+                    levelsCleared = levelsCleared,
+                    animationsPlayed = __instance.currentSlotAnimationsPlayed,
+                    hasShield = hasShield,
+                    levelSeeds = levelSeeds
+                };
+                Stream stream = File.Open(GetSlotFileName(__instance), FileMode.Create);
+                BinaryFormatter binaryFormatter = new();
+                binaryFormatter.Serialize(stream, saveData);
+                stream.Close();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+            return false;
         }
-        catch (Exception e)
-        {
-            Debug.LogError(e);
-        }
-        return false;
 
+        return true;
     }
 
 
