@@ -467,14 +467,14 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
         if (!File.Exists(gamepath + "/APInfo.json"))
         {
+            Logger.LogMessage("No APInfo.json file found. Creating a default one.");
+
             FileStream fsOut = new(gamepath + "/APInfo.json", FileMode.OpenOrCreate, FileAccess.ReadWrite);
             apInfo.Add("host", "archipelago.gg");
             apInfo.Add("port", "38281");
             apInfo.Add("slot", "");
             apInfo.Add("password", "");
-            // foreach (KeyValuePair<string,string> kv in apInfo) {
-            //     Logger.LogMessage(kv.Key + ":   " + kv.Value);
-            // }
+
             string jsonOut = JsonConvert.SerializeObject(apInfo);
             using StreamWriter swOut = new(fsOut);
             swOut.Write(jsonOut);
