@@ -534,7 +534,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         if (!result.Successful)
         {
             LoginFailure failure = (LoginFailure)result;
-            string errorMessage = $"Failed to Connect to Hexcells Infinite as " + apInfo.GetValueSafe("slot");
+            string errorMessage = $"Failed to Connect to Archipelago server as " + apInfo.GetValueSafe("slot");
             foreach (string error in failure.Errors)
             {
                 errorMessage += $"\n    {error}";
