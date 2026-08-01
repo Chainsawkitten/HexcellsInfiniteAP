@@ -711,7 +711,12 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 color = "b94437";
             }
 
-            levelClearMessages[id] = "Found <color=#b6b615>" + Sanitize(itemInfo.Value.Player.Name) + "</color>'s <color=#" + color + ">" + Sanitize(itemInfo.Value.ItemName) + "</color>!";
+            string playerString = "your";
+            if (session.ConnectionInfo.Slot != itemInfo.Value.Player.Slot) {
+                playerString = "<color=#b6b615>" + Sanitize(itemInfo.Value.Player.Name) + "</color>'s";
+            }
+
+            levelClearMessages[id] = "Found " + playerString + " <color=#" + color + ">" + Sanitize(itemInfo.Value.ItemName) + "</color>!";
         }
     }
 
