@@ -91,7 +91,6 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             info.AddValue("AnimationsPlayed", animationsPlayed);
             info.AddValue("HasShield", hasShield);
             info.AddValue("LevelSeeds", levelSeeds);
-            info.AddValue("ServerSeed",serverSeed);
         }
 
 
@@ -106,8 +105,6 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         public bool hasShield;
 
         public int[] levelSeeds = new int[36];
-
-        public string serverSeed = "";
 
     }
 
@@ -829,6 +826,12 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         
     }
 
+    private static string GetSlotFileName(GameManagerScript manager)
+    {
+        string seed = session.DataStorage.GetSlotData()["Seed"].ToString();
+        return manager.executablePath + "/saves/slotAP_" + seed + ".save";
+    }
+
     //custom implementation of LoadGame, which also handles setting unlock amounts, as well as showing correct level states when returning to game
     [HarmonyPatch(typeof(HexSaveSlot), "OnMouseOver")]
     [HarmonyPrefix]
@@ -839,76 +842,69 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             if (Input.GetMouseButtonDown(0))
             {
                 GameManagerScript manager = GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>();
-                if (!File.Exists(manager.executablePath + "/saves/slotAP.save"))
+                string slotFileName = GetSlotFileName(manager);
+                if (!File.Exists(slotFileName))
                 {
                     manager.SaveGame();
                 }
                 
                 SaveAddData saveData = new();
-                string text = string.Concat(new object[] { manager.executablePath, "/saves/slotAP.save" });
-                Stream stream = File.Open(text, FileMode.Open);
+                Stream stream = File.Open(slotFileName, FileMode.Open);
                 BinaryFormatter binaryFormatter = new();
                 saveData = (SaveAddData)binaryFormatter.Deserialize(stream);
                 stream.Close();
-                if (session.DataStorage.GetSlotData()["Seed"].ToString() != saveData.serverSeed && saveData.serverSeed != "")
+
+                GameObject.Find("Menu Logic").GetComponent<MenuLogic>().gameManagerScript = manager;
+                GameObject.Find("Main Camera").GetComponent<Tween>().targetPosition = new Vector3(0f, 0f, -10f);
+                GameObject.Find("Main Camera").GetComponent<Tween>().Play();
+                manager.currentMenuState = GameManagerScript.MenuState.LevelSelect;
+
+                __instance.musicDirector.PlayNoteA(0f);
+
+
+                Logger.LogMessage("LOAD GAME");
+                try
                 {
-                    GameObject.Find("User Levels Button").GetComponent<TextMeshPro>().color = new UnityEngine.Color(1, .5f, .5f);
-                    GameObject.Find("User Levels Button").GetComponent<TextMeshPro>().text = "Current save is from a different AP.\nThis will break things!\nRemove the slotAP.save file from the saves directory!";
+                    hasShield = saveData.hasShield;
+                    levelsCleared = saveData.levelsCleared;
+                    manager.currentSlotNumberOfGems = itemCount;
+                    manager.currentSlotLevelGemsUnlocked = saveData.levelGemsUnlocked;
+                    manager.currentSlotAnimationsPlayed = saveData.animationsPlayed;
+                    levelSeeds = saveData.levelSeeds;
                 }
-                else
+                catch (Exception e)
                 {
-                    GameObject.Find("Menu Logic").GetComponent<MenuLogic>().gameManagerScript = manager;
-                    GameObject.Find("Main Camera").GetComponent<Tween>().targetPosition = new Vector3(0f, 0f, -10f);
-                    GameObject.Find("Main Camera").GetComponent<Tween>().Play();
-                    manager.currentMenuState = GameManagerScript.MenuState.LevelSelect;
-
-                    __instance.musicDirector.PlayNoteA(0f);
-
-
-                    Logger.LogMessage("LOAD GAME");
-                    try
-                    {
-                        hasShield = saveData.hasShield;
-                        levelsCleared = saveData.levelsCleared;
-                        manager.currentSlotNumberOfGems = itemCount;
-                        manager.currentSlotLevelGemsUnlocked = saveData.levelGemsUnlocked;
-                        manager.currentSlotAnimationsPlayed = saveData.animationsPlayed;
-                        levelSeeds = saveData.levelSeeds;
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogError(e);
-                    }
-
-
-                    manager.currentPerGameData.worldUnlockThresholds = [0, 6, 12, 18, 24, 30];
-
-                    manager.currentPerGameData.levelRewardAmounts = [
-                    0,2,2,2,2,2,2,2,2,2,2,
-                    2,2,2,2,2,2,2,2,2,2,
-                    2,2,2,2,2,2,2,2,2,2,
-                    2,2,2,2,2,2
-                    ];
-
-
-
-                    manager.currentPerGameData.totalGemsInGame = 36;
-
-                    //Set all world unlock animations as already having played. This is to prevent the state being overridden after being collected.
-                    for (int i = 0; i < 5; i++)
-                    {
-                        manager.currentSlotAnimationsPlayed[i] = 1;
-                    }
-
-                    for (int i = 0; i < GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().currentSlotLevelGemsUnlocked.Length; i++)
-                    {
-                        if (levelsCleared[i])
-                        {
-                            GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().currentSlotLevelGemsUnlocked[i] = 2;
-                        }
-                    }
-                    ReloadCellDisplay();
+                    Debug.LogError(e);
                 }
+
+
+                manager.currentPerGameData.worldUnlockThresholds = [0, 6, 12, 18, 24, 30];
+
+                manager.currentPerGameData.levelRewardAmounts = [
+                0,2,2,2,2,2,2,2,2,2,2,
+                2,2,2,2,2,2,2,2,2,2,
+                2,2,2,2,2,2,2,2,2,2,
+                2,2,2,2,2,2
+                ];
+
+
+
+                manager.currentPerGameData.totalGemsInGame = 36;
+
+                //Set all world unlock animations as already having played. This is to prevent the state being overridden after being collected.
+                for (int i = 0; i < 5; i++)
+                {
+                    manager.currentSlotAnimationsPlayed[i] = 1;
+                }
+
+                for (int i = 0; i < GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().currentSlotLevelGemsUnlocked.Length; i++)
+                {
+                    if (levelsCleared[i])
+                    {
+                        GameObject.Find("Game Manager(Clone)").GetComponent<GameManagerScript>().currentSlotLevelGemsUnlocked[i] = 2;
+                    }
+                }
+                ReloadCellDisplay();
             }
         }
 
@@ -930,11 +926,9 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 levelsCleared = levelsCleared,
                 animationsPlayed = __instance.currentSlotAnimationsPlayed,
                 hasShield = hasShield,
-                levelSeeds = levelSeeds,
-                serverSeed = session.DataStorage.GetSlotData()["Seed"].ToString()
+                levelSeeds = levelSeeds
             };
-            string text = string.Concat(new object[] { __instance.executablePath, "/saves/slotAP.save" });
-            Stream stream = File.Open(text, FileMode.Create);
+            Stream stream = File.Open(GetSlotFileName(__instance), FileMode.Create);
             BinaryFormatter binaryFormatter = new();
             binaryFormatter.Serialize(stream, saveData);
             stream.Close();
