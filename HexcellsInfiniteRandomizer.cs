@@ -482,7 +482,17 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
         FileStream fsIn = new(gamepath + "/APInfo.json", FileMode.Open, FileAccess.Read);
         using StreamReader srIn = new(fsIn);
 
-        apInfo = JsonConvert.DeserializeObject<Dictionary<string, string>>(srIn.ReadLine());
+        try
+        {
+            apInfo = JsonConvert.DeserializeObject<Dictionary<string, string>>(srIn.ReadLine());
+        }
+        catch (Exception e)
+        {
+            Logger.LogError("Failed to parse json: " + e.ToString());
+            return;
+        }
+
+
         if (apInfo.GetValueSafe("host") != "localhost")
         {
             session = ArchipelagoSessionFactory.CreateSession("wss://" + apInfo.GetValueSafe("host"), int.Parse(apInfo.GetValueSafe("port")));
