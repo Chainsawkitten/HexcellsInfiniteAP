@@ -484,7 +484,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
         try
         {
-            apInfo = JsonConvert.DeserializeObject<Dictionary<string, string>>(srIn.ReadLine());
+            apInfo = JsonConvert.DeserializeObject<Dictionary<string, string>>(srIn.ReadToEnd());
         }
         catch (Exception e)
         {
