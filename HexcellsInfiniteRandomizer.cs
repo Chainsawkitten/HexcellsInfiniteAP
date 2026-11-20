@@ -834,8 +834,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
 
     private static string GetSlotFileName(GameManagerScript manager)
     {
-        string seed = session.DataStorage.GetSlotData()["Seed"].ToString();
-        return manager.executablePath + "/saves/slotAP_" + seed + "_" + session.ConnectionInfo.Slot.ToString() + ".save";
+        return manager.executablePath + "/saves/slotAP_" + session.RoomState.Seed + "_" + session.ConnectionInfo.Slot.ToString() + ".save";
     }
 
     //custom implementation of LoadGame, which also handles setting unlock amounts, as well as showing correct level states when returning to game
@@ -881,6 +880,25 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
                 catch (Exception e)
                 {
                     Debug.LogError(e);
+                }
+
+                //If we've cleared levels locally, but not on the server, send the locations again.
+                //Presumably, this is because we beat them while disconnected.
+                for (int i = 0; i < 36; ++i)
+                {
+                    long locationID = GetLocationID(i + 1);
+                    if (levelsCleared[i] && !session.Locations.AllLocationsChecked.Contains(locationID))
+                    {
+                        Logger.LogMessage("Have location " + locationID.ToString() + " locally, but not on server. Resending.");
+                        try
+                        {
+                            session.Locations.CompleteLocationChecks(locationID);
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.LogError("Failed to send location. " + e.ToString());
+                        }
+                    }
                 }
 
 
@@ -943,7 +961,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Logger.LogError(e.ToString());
             }
             return false;
         }
@@ -952,15 +970,25 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
     }
 
 
-    private static void CheckLevel(int levelToLoad, GameObject textUI = null)
+    private static long GetLocationID(int level)
     {
         if (options.LevelUnlockType == ELevelUnlockType.Vanilla)
         {
-            session.Locations.CompleteLocationChecks(levelToLoad);
+            return level;
         }
-        else
+
+        return level + 36;
+    }
+
+    private static void CheckLevel(int levelToLoad, GameObject textUI = null)
+    {
+        try
         {
-            session.Locations.CompleteLocationChecks(levelToLoad + 36);
+            session.Locations.CompleteLocationChecks(GetLocationID(levelToLoad));
+        }
+        catch (Exception e)
+        {
+            Logger.LogError("Failed to complete location check. " + e.ToString());
         }
 
         if (textUI != null)
