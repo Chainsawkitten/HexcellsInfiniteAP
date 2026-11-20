@@ -798,7 +798,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             {
                 box = Instantiate(GameObject.Find("UI Parent (Level Gen)/Info Box 2"));
                 box.transform.parent = GameObject.Find("UI Parent (Level Gen)").transform;
-                box.transform.localPosition = new Vector3(9.2763f, 3.5825f, 1.5f);
+                box.transform.localPosition = new Vector3(10.2763f, 3.5825f, 1.5f);
                 box.name = "Shield Info";
                 DestroyImmediate(GameObject.Find("UI Parent (Level Gen)/Shield Info/Instruction Text").GetComponent<LoadLocalizedText>());
                 GameObject.Find("UI Parent (Level Gen)/Shield Info/Instruction Text").GetComponent<TextMeshPro>().text = "Shield";
@@ -810,7 +810,7 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             {
                 box = Instantiate(GameObject.Find("UI Parent/Info Box 2"));
                 box.transform.parent = GameObject.Find("UI Parent").transform;
-                box.transform.localPosition = new Vector3(9.2763f, 3.5825f, 1.5f);
+                box.transform.localPosition = new Vector3(10.2763f, 3.5825f, 1.5f);
                 box.name = "Shield Info";
                 DestroyImmediate(GameObject.Find("UI Parent/Shield Info/Mistakes Label Text").GetComponent<LoadLocalizedText>());
                 GameObject.Find("UI Parent/Shield Info/Mistakes Label Text").GetComponent<TextMeshPro>().text = "Shield";
