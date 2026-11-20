@@ -492,18 +492,9 @@ public class HexcellsInfiniteRandomizer : BaseUnityPlugin
             return;
         }
 
-
-        if (apInfo.GetValueSafe("host") != "localhost")
-        {
-            session = ArchipelagoSessionFactory.CreateSession("wss://" + apInfo.GetValueSafe("host"), int.Parse(apInfo.GetValueSafe("port")));
-        }
-        else
-        {
-            session = ArchipelagoSessionFactory.CreateSession(apInfo.GetValueSafe("host"), int.Parse(apInfo.GetValueSafe("port")));
-        }
+        session = ArchipelagoSessionFactory.CreateSession(apInfo.GetValueSafe("host"), int.Parse(apInfo.GetValueSafe("port")));
 
         LoginResult result;
-
         try
         {
             result = session.TryConnectAndLogin("Hexcells Infinite", apInfo.GetValueSafe("slot"), ItemsHandlingFlags.AllItems, password: apInfo.GetValueSafe("password"));
